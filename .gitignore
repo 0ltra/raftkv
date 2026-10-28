@@ -1,0 +1,20 @@
+# Build output
+build/
+cmake-build-*/
+CMakeUserPresets.json
+compile_commands.json
+
+# Runtime data written by the server (AOF files, Raft logs, node state)
+*.aof
+*.wal
+data/
+tmp/
+
+# Secrets and local config (nothing needs them yet, but keep them out of history)
+.env
+.env.*
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
