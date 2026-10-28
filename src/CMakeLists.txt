@@ -13,3 +13,10 @@ add_library(raftkv_store
 )
 target_include_directories(raftkv_store PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(raftkv_store PUBLIC raftkv_options)
+
+# Command dispatcher: parsed command in, RESP reply out.
+add_library(raftkv_commands
+    commands/dispatcher.cpp
+)
+target_include_directories(raftkv_commands PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(raftkv_commands PUBLIC raftkv_resp raftkv_store raftkv_options)
