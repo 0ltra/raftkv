@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         gdb \
         valgrind \
         redis-tools \
+        redis-server \
         ca-certificates \
         curl \
     && rm -rf /var/lib/apt/lists/*

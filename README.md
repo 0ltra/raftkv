@@ -3,7 +3,7 @@
 A Redis-compatible (RESP) key-value store in C++20, built in phases toward Raft replication
 and a deterministic failure-injection test harness.
 
-**Status:** Phase 1 in progress. A working single-node server with an append-only file for persistence. Benchmarks against real Redis are still to do.
+**Status:** Phase 1 (single-node server) complete. A working single-node server with an append-only file for persistence. Next: Raft core.
 
 ## Requirements
 
@@ -81,3 +81,36 @@ tail from corruption in the middle of the file, so it cuts at the first bad reco
 3. Deterministic simulator with fault injection and invariant checks
 4. (Optional) linearizability checker
 5. Benchmarks and write-up
+
+## Benchmark vs Redis
+
+`bench/run_bench.sh` runs the same `redis-benchmark` workload against raftkv and real Redis 7.0.15
+(50 clients, 200k requests, 100k random keys, median of 3 runs). Both run on one machine, inside a
+Linux dev container (aarch64, 18 CPUs) on a Mac, so only compare numbers within a table.
+Full output is in `bench/results.md`.
+
+Pipeline depth 16, no persistence (requests per second):
+
+| Command | raftkv | Redis | raftkv / Redis |
+|---|---:|---:|---:|
+| PING | 3,703,704 | 3,921,569 | 94% |
+| SET | 2,197,802 | 2,500,000 | 88% |
+| GET | 2,439,024 | 2,941,176 | 83% |
+| INCR | 2,247,191 | 2,816,901 | 80% |
+
+Pipeline depth 16, append-only file with fsync everysec on both:
+
+| Command | raftkv | Redis | raftkv / Redis |
+|---|---:|---:|---:|
+| PING | 3,703,704 | 3,448,276 | 107% |
+| SET | 1,449,275 | 1,449,275 | 100% |
+| GET | 2,564,102 | 2,127,660 | 121% |
+| INCR | 1,562,500 | 1,639,344 | 95% |
+
+Without pipelining (depth 1) both servers land at roughly 255k-280k req/s on every command, with or
+without the log, and raftkv is within 5% of Redis on all but one row. That mostly reflects the
+client and the loopback round trip, not the servers, so the pipelined runs say more.
+
+Caveats: results vary by 20% or more between runs (GET gains 38 points between the two tables
+above although the AOF cannot affect reads), so read these as "same ballpark as Redis", not as a win or
+a loss. Redis does far more per request (many data types, statistics, replication hooks).
