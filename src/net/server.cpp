@@ -58,8 +58,8 @@ std::size_t pendingOutput(const std::string& out, std::size_t offset) {
 
 }  // namespace
 
-Server::Server(ServerConfig config, CommandDispatcher& dispatcher)
-    : config_(std::move(config)), dispatcher_(dispatcher), readBuffer_(kReadChunkBytes) {}
+Server::Server(ServerConfig config, CommandHandler& handler)
+    : config_(std::move(config)), handler_(handler), readBuffer_(kReadChunkBytes) {}
 
 Server::~Server() {
     for (const auto& entry : conns_) {
@@ -267,6 +267,13 @@ bool Server::onReadable(Connection& conn) {
 
     conn.in.append(readBuffer_.data(), static_cast<std::size_t>(got));
     processInput(conn);
+
+    // Group commit: everything this read executed is made durable in one step, and only
+    // then do the replies leave. A reply is a promise; it must not outrun the disk.
+    if (!handler_.commit()) {
+        logError("commit failed; closing client without acknowledging its commands");
+        conn.failed = true;
+    }
     return flush(conn);
 }
 
@@ -287,7 +294,7 @@ void Server::processInput(Connection& conn) {
             break;
         }
 
-        dispatcher_.execute(parsed.command, conn.out);
+        handler_.execute(parsed.command, conn.out);
         pos += parsed.consumed;
 
         if (pendingOutput(conn.out, conn.outOffset) > kMaxPendingOutputBytes) {

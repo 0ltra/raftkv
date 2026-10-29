@@ -6,6 +6,7 @@
 // (and later the deterministic Raft simulator) can supply fake time they control.
 
 #include <cstdint>
+#include <optional>
 
 namespace raftkv {
 
@@ -37,6 +38,43 @@ public:
 
 private:
     TimestampMs now_;
+};
+
+// A clock that can be frozen ("pinned") at one instant, otherwise it follows a base clock.
+//
+// Every command runs while pinned, so the whole command sees a single moment in time.
+// That moment is written to the append-only file next to the command. On recovery the
+// clock is pinned to the recorded moment again, so replaying a command gives exactly the
+// result it gave the first time, no matter how much later the restart happens.
+class PinnableClock final : public Clock {
+public:
+    // The base clock must outlive this one.
+    explicit PinnableClock(const Clock& base) : base_(base) {}
+
+    TimestampMs nowMs() const override { return pinned_.has_value() ? *pinned_ : base_.nowMs(); }
+
+    // The base clock's time, ignoring any pin.
+    TimestampMs baseNowMs() const { return base_.nowMs(); }
+
+    void pin(TimestampMs t) { pinned_ = t; }
+    void unpin() { pinned_.reset(); }
+
+private:
+    const Clock& base_;
+    std::optional<TimestampMs> pinned_;
+};
+
+// Pins a clock for the duration of a scope.
+class ScopedPin {
+public:
+    ScopedPin(PinnableClock& clock, TimestampMs t) : clock_(clock) { clock_.pin(t); }
+    ~ScopedPin() { clock_.unpin(); }
+
+    ScopedPin(const ScopedPin&) = delete;
+    ScopedPin& operator=(const ScopedPin&) = delete;
+
+private:
+    PinnableClock& clock_;
 };
 
 }  // namespace raftkv

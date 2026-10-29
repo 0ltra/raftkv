@@ -6,7 +6,7 @@ find_package(Threads REQUIRED)
 
 add_executable(raftkv_tests ${RAFTKV_TEST_SOURCES})
 target_link_libraries(raftkv_tests PRIVATE
-    raftkv_options raftkv_resp raftkv_store raftkv_commands raftkv_net
+    raftkv_options raftkv_resp raftkv_store raftkv_commands raftkv_persistence raftkv_net
     Threads::Threads GTest::gtest_main)
 
 # Registers each TEST() as its own CTest entry so failures name the exact test.

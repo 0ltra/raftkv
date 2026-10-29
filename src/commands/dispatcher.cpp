@@ -59,31 +59,37 @@ std::optional<std::int64_t> parseInt64(std::string_view text) {
 
 }  // namespace
 
+const std::array<CommandDispatcher::Spec, 7>& CommandDispatcher::commandTable() {
+    static const std::array<Spec, 7> kCommands{{
+        {"ping", 1, 2, false, &CommandDispatcher::handlePing},
+        {"get", 2, 2, false, &CommandDispatcher::handleGet},
+        {"set", 3, 3, true, &CommandDispatcher::handleSet},
+        {"del", 2, kUnlimited, true, &CommandDispatcher::handleDel},
+        {"expire", 3, 3, true, &CommandDispatcher::handleExpire},
+        {"ttl", 2, 2, false, &CommandDispatcher::handleTtl},
+        {"incr", 2, 2, true, &CommandDispatcher::handleIncr},
+    }};
+    return kCommands;
+}
+
+bool CommandDispatcher::isWriteCommand(std::string_view name) {
+    const std::string lowered = toLower(name);
+    for (const Spec& spec : commandTable()) {
+        if (spec.name == lowered) {
+            return spec.writes;
+        }
+    }
+    return false;
+}
+
 void CommandDispatcher::execute(const resp::Command& command, std::string& out) {
     if (command.empty()) {
         resp::appendError(out, "ERR empty command");
         return;
     }
 
-    using Handler = void (CommandDispatcher::*)(const resp::Command&, std::string&);
-    struct Spec {
-        std::string_view name;  // lowercase
-        std::size_t minArgc;    // counts the command name itself
-        std::size_t maxArgc;
-        Handler handler;
-    };
-    static const std::array<Spec, 7> kCommands{{
-        {"ping", 1, 2, &CommandDispatcher::handlePing},
-        {"get", 2, 2, &CommandDispatcher::handleGet},
-        {"set", 3, 3, &CommandDispatcher::handleSet},
-        {"del", 2, kUnlimited, &CommandDispatcher::handleDel},
-        {"expire", 3, 3, &CommandDispatcher::handleExpire},
-        {"ttl", 2, 2, &CommandDispatcher::handleTtl},
-        {"incr", 2, 2, &CommandDispatcher::handleIncr},
-    }};
-
     const std::string name = toLower(command[0]);
-    for (const Spec& spec : kCommands) {
+    for (const Spec& spec : commandTable()) {
         if (spec.name != name) {
             continue;
         }

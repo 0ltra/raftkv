@@ -2,7 +2,7 @@
 
 // TCP server: a single-threaded epoll event loop that speaks RESP.
 //
-//   bytes in -> parseCommand() -> CommandDispatcher::execute() -> bytes out
+//   bytes in -> parseCommand() -> CommandHandler::execute() -> commit() -> bytes out
 //
 // One thread owns every socket, every connection buffer and the store, so no
 // locks are needed. Sockets are non-blocking and the epoll mode is
@@ -19,7 +19,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "commands/dispatcher.hpp"
+#include "commands/handler.hpp"
 
 namespace raftkv {
 
@@ -35,8 +35,8 @@ struct ServerConfig {
 
 class Server {
 public:
-    // The dispatcher must outlive the server.
-    Server(ServerConfig config, CommandDispatcher& dispatcher);
+    // The handler must outlive the server.
+    Server(ServerConfig config, CommandHandler& handler);
     ~Server();
 
     Server(const Server&) = delete;
@@ -76,7 +76,7 @@ private:
     void closeListenerFds();
 
     ServerConfig config_;
-    CommandDispatcher& dispatcher_;
+    CommandHandler& handler_;
 
     int listenFd_ = -1;
     int epollFd_ = -1;
