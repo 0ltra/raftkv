@@ -20,3 +20,14 @@ add_library(raftkv_commands
 )
 target_include_directories(raftkv_commands PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(raftkv_commands PUBLIC raftkv_resp raftkv_store raftkv_options)
+
+# TCP server: epoll event loop (Linux only).
+add_library(raftkv_net
+    net/server.cpp
+)
+target_include_directories(raftkv_net PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(raftkv_net PUBLIC raftkv_commands raftkv_options)
+
+# The server program.
+add_executable(raftkv_server main.cpp)
+target_link_libraries(raftkv_server PRIVATE raftkv_net)
