@@ -1,4 +1,4 @@
-# raftkv (working title)
+# raftkv
 
 A Redis-compatible (RESP) key-value store in C++20, built in phases toward Raft replication
 and a deterministic failure-injection test harness.
