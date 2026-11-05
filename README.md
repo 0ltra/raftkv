@@ -3,8 +3,6 @@
 A Redis-compatible (RESP) key-value store in C++20, built in phases toward Raft replication
 and a deterministic failure-injection test harness.
 
-**Status:** Phase 1 (single-node server) complete. A working single-node server with an append-only file for persistence. Next: Raft core.
-
 ## Requirements
 
 - Linux (the server uses `epoll`). On macOS, use the dev container in `.devcontainer/`.
