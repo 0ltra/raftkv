@@ -74,14 +74,6 @@ tail from corruption in the middle of the file, so it cuts at the first bad reco
 - Inline commands are not supported, so `telnet` and `nc` will not work. Use `redis-cli`.
 - No `SET` options (`EX`, `NX`), no log compaction, IPv4 only, Linux only.
 
-## Roadmap
-
-1. Single-node server: RESP parser, epoll loop, commands, key expiry, append-only file
-2. Raft core as a pure deterministic state machine
-3. Deterministic simulator with fault injection and invariant checks
-4. (Optional) linearizability checker
-5. Benchmarks and write-up
-
 ## Benchmark vs Redis
 
 `bench/run_bench.sh` runs the same `redis-benchmark` workload against raftkv and real Redis 7.0.15
